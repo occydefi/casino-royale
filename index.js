@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
+const ai = require("./ai");
 
 const app = express();
 const PORT = 3025;
@@ -400,6 +401,33 @@ function shuffleDeck(deck) {
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
 }
+
+// AI-powered endpoints
+app.post("/api/ai/decide-action", async (req, res) => {
+  try {
+    const { hand, communityCards, potSize, position, opponentBehavior } = req.body;
+    const decision = await ai.decidePokerAction(hand || "Ah Kd", communityCards, potSize || 100, position || "dealer", opponentBehavior);
+    res.json({ success: true, decision });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/ai/analyze-table/:tableId", async (req, res) => {
+  try {
+    const table = tables.get(req.params.tableId);
+    if (!table) return res.status(404).json({ error: "Table not found" });
+    const analysis = await ai.analyzeTable(table);
+    res.json({ success: true, tableId: req.params.tableId, analysis });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/ai/player-profile/:playerId", async (req, res) => {
+  try {
+    const player = players.get(req.params.playerId);
+    if (!player) return res.status(404).json({ error: "Player not found" });
+    const profile = await ai.generatePlayerProfile(player);
+    res.json({ success: true, player: player.name, profile });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // Seed demo
 function seedDemo() {
